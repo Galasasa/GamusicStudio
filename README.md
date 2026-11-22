@@ -51,7 +51,7 @@ Windows x64 可执行文件可从 [Releases](https://github.com/Galasasa/Gamusic
 - 将 MIDI 旋钮或推杆绑定到 Windows 鼠标灵敏度，滑块实时显示当前档位
 - 用 MIDI 旋钮左右转动控制鼠标横移，支持 48 档移动速度、绝对位置 CC 和 Mackie 相对步进
 
-鼠标横移使用 Windows 模拟输入。实测桌面指针可以移动，《无畏契约》的游戏视角未响应。
+鼠标横移使用 Windows 模拟输入。
 
 ## 构建
 
