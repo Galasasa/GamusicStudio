@@ -1,0 +1,414 @@
+<Window x:Class="MidiKey.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="GamusicStudio 键知弹"
+ Width="1150" Height="740" MinWidth="940" MinHeight="640" WindowStartupLocation="CenterScreen"
+ Style="{StaticResource {x:Type Window}}">
+ <Window.Resources>
+  <Style x:Key="PianoSustainSlider" TargetType="Slider">
+   <Setter Property="Height" Value="24"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="Slider">
+      <Grid Background="Transparent">
+       <Border x:Name="Rail" Background="{StaticResource Magenta}" Height="2" Opacity=".65"
+        VerticalAlignment="Center" Margin="5,0"/>
+       <Track x:Name="PART_Track">
+        <Track.Resources>
+         <Style TargetType="RepeatButton">
+          <Setter Property="Focusable" Value="False"/>
+          <Setter Property="Template">
+           <Setter.Value><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate></Setter.Value>
+          </Setter>
+         </Style>
+        </Track.Resources>
+        <Track.DecreaseRepeatButton><RepeatButton Command="Slider.DecreaseLarge"/></Track.DecreaseRepeatButton>
+        <Track.IncreaseRepeatButton><RepeatButton Command="Slider.IncreaseLarge"/></Track.IncreaseRepeatButton>
+        <Track.Thumb>
+         <Thumb Width="12" Height="16" Cursor="SizeWE">
+          <Thumb.Template>
+           <ControlTemplate TargetType="Thumb">
+            <Border Background="{StaticResource PrimaryFill}" BorderBrush="{StaticResource Accent}"
+             BorderThickness="1.5" CornerRadius="3"/>
+           </ControlTemplate>
+          </Thumb.Template>
+         </Thumb>
+        </Track.Thumb>
+       </Track>
+      </Grid>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsEnabled" Value="False"><Setter TargetName="PART_Track" Property="Opacity" Value=".4"/></Trigger>
+       <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Rail" Property="Background" Value="{StaticResource Accent}"/></Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+  <Style TargetType="DataGridColumnHeader">
+   <Setter Property="Background" Value="{StaticResource ControlFill}"/>
+   <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+   <Setter Property="Padding" Value="12,10"/>
+   <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style TargetType="DataGridCell">
+   <Setter Property="BorderThickness" Value="0"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="DataGridCell">
+      <Border Padding="12,0" Background="Transparent">
+       <ContentPresenter VerticalAlignment="Center"/>
+      </Border>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+ </Window.Resources>
+ <Grid>
+ <Grid Margin="24,18,24,13">
+  <Grid.RowDefinitions>
+   <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+  </Grid.RowDefinitions>
+  <Grid Margin="0,0,0,16">
+   <Grid HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,390,0">
+    <TextBlock x:Name="PresetEditorName" Visibility="Collapsed" VerticalAlignment="Center" FontSize="25" FontWeight="SemiBold"
+     Foreground="{StaticResource Accent}" TextTrimming="CharacterEllipsis"/>
+    <StackPanel x:Name="LibraryBrand">
+    <StackPanel VerticalAlignment="Center">
+     <TextBlock Text="Gamusic Studio" Foreground="{StaticResource Magenta}" FontFamily="Arial" FontStyle="Italic"
+      FontSize="31" FontWeight="Bold" Effect="{StaticResource PinkGlow}"/>
+     <TextBlock Text="从此音乐人只需一把键盘" Style="{StaticResource MutedText}" Margin="1,1,0,0"/>
+    </StackPanel>
+    </StackPanel>
+   </Grid>
+   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+    <StackPanel x:Name="WorkspaceActions" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,12,0">
+     <Button Content="重命名" Click="RenamePreset" Padding="10,5" Margin="0,0,6,0"/>
+     <Button Content="另存为" Click="SavePresetCopy" Padding="10,5" Margin="0,0,6,0"/>
+     <Button Content="返回程序库" Click="ReturnToPresets" Padding="10,5"/>
+    </StackPanel>
+    <Button x:Name="OutputButton" Height="36" Foreground="{StaticResource Accent}"
+     Style="{StaticResource PrimaryButton}" Click="ToggleOutput" Padding="15,6" Content="●  按键输出已开启"/>
+   </StackPanel>
+  </Grid>
+  <Border x:Name="DeviceToolbar" Grid.Row="1" Style="{StaticResource PanelBox}" Padding="14,11" Margin="0,0,0,14">
+   <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="245"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <TextBlock Text="MIDI 输入" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0"/>
+    <ComboBox x:Name="DevicePicker" Grid.Column="1" SelectionChanged="SelectDevice" AutomationProperties.Name="MIDI 输入端口"/>
+    <Button Content="刷新" Grid.Column="2" Click="RefreshDevices" Margin="8,0,0,0"/>
+    <DockPanel Grid.Column="3" Margin="16,0,10,0" VerticalAlignment="Center">
+     <Ellipse x:Name="DeviceDot" DockPanel.Dock="Left" Width="7" Height="7" Fill="{StaticResource Muted}" Margin="0,0,8,0"/>
+     <TextBlock x:Name="DeviceStatus" Style="{StaticResource MutedText}" Text="正在检测设备" TextTrimming="CharacterEllipsis"/>
+    </DockPanel>
+    <Button x:Name="CancelPresetButton" Grid.Column="4" Content="取消夺舍" Click="CancelActivePreset"
+     Foreground="{StaticResource Error}" Visibility="Collapsed" ToolTip="停止当前夺舍程序的输出并释放长按键。"/>
+   </Grid>
+  </Border>
+  <Grid x:Name="PresetScreen" Grid.Row="2" Margin="0,0,0,1">
+   <Grid.RowDefinitions>
+    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+   </Grid.RowDefinitions>
+   <DockPanel Margin="1,0,1,11">
+    <StackPanel x:Name="PresetCreateActions" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+     <Button x:Name="PresetCopyButton" Content="另存当前配置" Click="SavePresetCopy" Margin="0,0,9,0" Height="36"/>
+     <Button Content="＋ 新建夺舍程序" Click="CreatePreset" Style="{StaticResource PrimaryButton}" Height="36"/>
+    </StackPanel>
+    <TextBlock Text="夺舍程序" FontSize="28" FontWeight="Bold" VerticalAlignment="Center"/>
+   </DockPanel>
+   <Grid Grid.Row="1" Margin="0,0,0,12">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="350"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <TextBlock x:Name="PresetResultCount" Grid.Column="2" Style="{StaticResource MutedText}"
+     VerticalAlignment="Center" Margin="14,0,0,0"/>
+    <TextBlock x:Name="PresetStatus" Grid.Column="1" Style="{StaticResource MutedText}"
+     HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,0,0"/>
+    <Grid>
+     <TextBox x:Name="PresetSearch" TextChanged="PresetSearchChanged" AutomationProperties.Name="搜索夺舍程序" MinHeight="38" Padding="37,4,36,4"/>
+     <Path Data="M 13,7 A 5,5 0 1 1 3,7 A 5,5 0 1 1 13,7 M 12,11 L 17,16"
+      Stroke="{StaticResource Accent}" StrokeThickness="1.4" Width="18" Height="18" Margin="11,0,0,0"
+      HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"/>
+     <TextBlock Text="搜索夺舍程序" Margin="38,0,34,0" VerticalAlignment="Center" IsHitTestVisible="False">
+      <TextBlock.Style>
+       <Style TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
+        <Setter Property="Visibility" Value="Collapsed"/>
+        <Style.Triggers>
+         <DataTrigger Binding="{Binding Text, ElementName=PresetSearch}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+        </Style.Triggers>
+       </Style>
+      </TextBlock.Style>
+     </TextBlock>
+     <Button Content="×" Click="ClearPresetSearch" AutomationProperties.Name="清除搜索" Width="23" Height="23"
+      Padding="0" Margin="0,0,8,0" HorizontalAlignment="Right" VerticalAlignment="Center">
+      <Button.Style>
+       <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Style.Triggers>
+         <DataTrigger Binding="{Binding Text, ElementName=PresetSearch}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+        </Style.Triggers>
+       </Style>
+      </Button.Style>
+     </Button>
+    </Grid>
+   </Grid>
+   <Grid x:Name="PresetViewport" Grid.Row="2" SizeChanged="ResizePresetViewport">
+   <ScrollViewer x:Name="PresetScroll" VerticalAlignment="Top" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden"
+    PreviewMouseWheel="ScrollPresetCards" Padding="0,1,0,10" Focusable="False">
+    <ListBox x:Name="PresetList" SelectionChanged="PresetSelectionChanged" Foreground="{StaticResource White}"
+     AutomationProperties.Name="夺舍程序卡片">
+     <ListBox.Template><ControlTemplate TargetType="ListBox"><ItemsPresenter/></ControlTemplate></ListBox.Template>
+     <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
+     <ListBox.ItemContainerStyle>
+      <Style TargetType="ListBoxItem">
+       <Setter Property="Cursor" Value="Hand"/>
+       <Setter Property="Foreground" Value="{StaticResource White}"/>
+       <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+       <Setter Property="Template">
+        <Setter.Value>
+         <ControlTemplate TargetType="ListBoxItem">
+          <Border Background="Transparent"><ContentPresenter/></Border>
+         </ControlTemplate>
+        </Setter.Value>
+       </Setter>
+      </Style>
+     </ListBox.ItemContainerStyle>
+     <ListBox.ItemTemplate>
+      <DataTemplate>
+       <StackPanel Width="242" Margin="1,1,15,5">
+        <Border Height="{DynamicResource PresetArtHeight}" CornerRadius="8">
+         <Border.Style>
+          <Style TargetType="Border">
+           <Setter Property="Background" Value="{Binding Surface}"/>
+           <Setter Property="BorderBrush" Value="{StaticResource ControlEdge}"/>
+           <Setter Property="BorderThickness" Value="1"/>
+           <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger>
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+             <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+             <Setter Property="BorderThickness" Value="2"/>
+            </DataTrigger>
+           </Style.Triggers>
+          </Style>
+         </Border.Style>
+         <Grid>
+          <Image Source="{Binding Logo}" MaxHeight="117" MaxWidth="194" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+           VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" AutomationProperties.Name="{Binding Name}"/>
+          <Border x:Name="ActivePresetBadge" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="11"
+           CornerRadius="4" Background="{StaticResource SignalFill}" Padding="7,4" Visibility="Collapsed">
+           <TextBlock Text="● 生效中" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Accent}"/>
+          </Border>
+          <Button Click="OpenPreset" Width="36" Height="36" Margin="0,0,11,11" Padding="7"
+           HorizontalAlignment="Right" VerticalAlignment="Bottom" ToolTip="编辑夺舍程序"
+           AutomationProperties.Name="{Binding Name, StringFormat=编辑夺舍程序 {0}}">
+           <Path Data="M 3,15 L 3,19 L 7,19 L 18,8 14,4 Z M 12.5,5.5 L 16.5,9.5"
+            Stroke="{StaticResource Accent}" StrokeThickness="1.5" StrokeLineJoin="Round" Stretch="Uniform"/>
+          </Button>
+         </Grid>
+        </Border>
+        <TextBlock x:Name="ProgramName" Text="{Binding Name}" Margin="2,10,2,1" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+        <TextBlock Text="{Binding Details}" Style="{StaticResource MutedText}" Margin="2,3,2,5"/>
+       </StackPanel>
+       <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsActive}" Value="True">
+         <Setter TargetName="ActivePresetBadge" Property="Visibility" Value="Visible"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+         <Setter TargetName="ProgramName" Property="Foreground" Value="{StaticResource Accent}"/>
+        </DataTrigger>
+       </DataTemplate.Triggers>
+      </DataTemplate>
+     </ListBox.ItemTemplate>
+    </ListBox>
+   </ScrollViewer>
+   <TextBlock x:Name="PresetEmpty" Text="没有找到匹配的夺舍程序。" Style="{StaticResource MutedText}"
+    HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,90,0,0" Visibility="Collapsed"/>
+   </Grid>
+   <Grid Grid.Row="3" Height="81" Margin="0,5,0,0">
+    <Button x:Name="FlashButton" Content="刷写程序" Click="FlashPreset" Style="{StaticResource PrimaryButton}"
+     IsEnabled="False" Height="38" MinWidth="148" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Border x:Name="FlashMonitor" Style="{StaticResource PanelBox}" Padding="15,9" Visibility="Collapsed">
+     <Grid VerticalAlignment="Center">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <DockPanel Margin="0,0,0,6">
+       <TextBlock x:Name="FlashPercentage" DockPanel.Dock="Right" Text="0%" FontFamily="Consolas" Foreground="{StaticResource Accent}"/>
+       <TextBlock x:Name="FlashProgramName" FontWeight="SemiBold" Foreground="{StaticResource White}" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <ProgressBar x:Name="FlashProgress" Grid.Row="1" Height="9" Maximum="100"
+       BorderThickness="0" Background="{StaticResource Line}" Foreground="{StaticResource MeterFill}" AutomationProperties.Name="刷写进度"/>
+      <TextBlock x:Name="FlashCommand" Grid.Row="2" Style="{StaticResource MutedText}" Margin="0,7,0,0"
+       FontFamily="Consolas, Microsoft YaHei UI" TextTrimming="CharacterEllipsis"/>
+     </Grid>
+    </Border>
+   </Grid>
+  </Grid>
+  <Grid x:Name="PresetWorkspace" Grid.Row="2" Visibility="Collapsed">
+  <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Grid>
+   <Grid.ColumnDefinitions><ColumnDefinition Width="282"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Grid>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Border Style="{StaticResource PanelBox}" Padding="13,12" Margin="0,0,0,12">
+     <StackPanel>
+      <TextBlock Text="MIDI 通道" FontSize="17" FontWeight="SemiBold" Margin="1,0,0,10"/>
+      <UniformGrid x:Name="Channels" Columns="4" Rows="4"/>
+     </StackPanel>
+    </Border>
+    <Border Grid.Row="1" Style="{StaticResource PanelBox}" Padding="13,11">
+     <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <TextBlock Text="最近信号" FontSize="17" FontWeight="SemiBold" Margin="1,0,0,9"/>
+      <TextBlock x:Name="FeedPlaceholder" Grid.Row="1" Style="{StaticResource MutedText}" Text="按下琴键或操作控制器以查看信号。" TextWrapping="Wrap" Margin="1,3"/>
+      <ListBox x:Name="Feed" Grid.Row="1" Background="Transparent" Foreground="{StaticResource White}" BorderThickness="0"
+       ScrollViewer.HorizontalScrollBarVisibility="Disabled" Focusable="False">
+       <ListBox.ItemContainerStyle>
+        <Style TargetType="ListBoxItem">
+         <Setter Property="Focusable" Value="False"/>
+         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+         <Setter Property="Template">
+          <Setter.Value>
+           <ControlTemplate TargetType="ListBoxItem">
+            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="1,5">
+             <ContentPresenter/>
+            </Border>
+           </ControlTemplate>
+          </Setter.Value>
+         </Setter>
+        </Style>
+       </ListBox.ItemContainerStyle>
+       <ListBox.ItemTemplate>
+        <DataTemplate>
+         <Grid>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel>
+           <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold"/>
+           <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+          <TextBlock Grid.Column="1" Text="{Binding Value}" Foreground="{StaticResource Accent}" FontFamily="Consolas"
+           VerticalAlignment="Center" Margin="5,0,0,0"/>
+         </Grid>
+        </DataTemplate>
+       </ListBox.ItemTemplate>
+      </ListBox>
+     </Grid>
+    </Border>
+   </Grid>
+   <Border Grid.Column="2" Style="{StaticResource PanelBox}" Padding="14,12">
+    <Grid>
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="39"/></Grid.RowDefinitions>
+     <DockPanel Margin="0,0,0,10">
+      <CheckBox x:Name="Follow" DockPanel.Dock="Right" Content="跟随输入" IsChecked="True" HorizontalAlignment="Right"
+       ToolTip="收到信号时自动切换到其来源、通道、信号类型和页码。"/>
+      <TextBlock x:Name="ChannelTitle" DockPanel.Dock="Left" Text="通道 01" FontSize="19" FontWeight="SemiBold" VerticalAlignment="Center"/>
+      <ComboBox x:Name="SourcePicker" Width="145" MinHeight="28" HorizontalAlignment="Left" Margin="12,0,8,0" Visibility="Collapsed"
+       SelectionChanged="SelectSource" AutomationProperties.Name="显示信号来源"
+       ToolTip="切换查看来源。已连接的两路输入会同时监听。"/>
+     </DockPanel>
+     <Grid Grid.Row="1" Margin="0,0,0,10">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <ComboBox x:Name="KindPicker" SelectionChanged="ChangeFilter" AutomationProperties.Name="信号类型"/>
+      <ComboBox x:Name="FilterPicker" Grid.Column="1" Margin="8,0,0,0" SelectionChanged="ChangeFilter" AutomationProperties.Name="信号筛选"/>
+      <TextBlock x:Name="TableCaption" Grid.Column="2" Style="{StaticResource MutedText}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+     </Grid>
+     <DataGrid x:Name="SignalTable" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
+      CanUserAddRows="False" CanUserResizeRows="False" CanUserReorderColumns="False" CanUserSortColumns="False"
+      SelectionMode="Single" HeadersVisibility="Column" ColumnHeaderHeight="32" RowHeight="29" GridLinesVisibility="Horizontal"
+      ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+      HorizontalGridLinesBrush="{StaticResource Line}" BorderBrush="{StaticResource Line}" BorderThickness="1"
+      Background="{StaticResource Panel}" Foreground="{StaticResource White}" MouseDoubleClick="EditOnDoubleClick" SizeChanged="ResizeSignalRows">
+      <DataGrid.RowStyle>
+       <Style TargetType="DataGridRow">
+        <Setter Property="Background" Value="{StaticResource Panel}"/>
+        <Setter Property="Foreground" Value="{StaticResource White}"/>
+        <Style.Triggers>
+         <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{StaticResource ControlFill}"/></Trigger>
+         <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{StaticResource SelectionFill}"/></Trigger>
+         <DataTrigger Binding="{Binding Hot}" Value="True"><Setter Property="Background" Value="{StaticResource SignalFill}"/></DataTrigger>
+        </Style.Triggers>
+       </Style>
+      </DataGrid.RowStyle>
+      <DataGrid.Columns>
+       <DataGridTemplateColumn Header="信号" Width="1.2*">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate>
+         <TextBlock Text="{Binding Label}" FontFamily="Consolas" FontSize="14" TextTrimming="CharacterEllipsis"/>
+        </DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="当前值" Width="1*">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate>
+         <Grid>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <TextBlock Text="{Binding DisplayValue}" FontFamily="Consolas" FontSize="14" Foreground="{StaticResource Accent}"/>
+          <ProgressBar Grid.Column="1" Height="4" VerticalAlignment="Center" Maximum="100" Value="{Binding Level, Mode=OneWay}"
+           Background="{StaticResource Line}" BorderThickness="0" Foreground="{StaticResource MeterFill}"/>
+         </Grid>
+        </DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="换键" Width="1.45*">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate>
+         <TextBlock Text="{Binding Mapping}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Mapping}"/>
+        </DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="操作" Width="96">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate>
+         <Button Content="{Binding EditLabel}" Click="EditMapping" Padding="6,1" MaxHeight="24" Margin="0,1" VerticalAlignment="Center"/>
+        </DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+      </DataGrid.Columns>
+     </DataGrid>
+     <TextBlock x:Name="EmptyTable" Grid.Row="2" Text="此筛选条件下暂无信号" Style="{StaticResource MutedText}"
+      HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
+     <StackPanel x:Name="Pager" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+      AutomationProperties.Name="信号分页">
+      <Button x:Name="PreviousPage" Content="‹" Click="GoToPreviousPage" Width="28" Height="28" Padding="0" FontSize="18"
+       Margin="0,0,4,0" ToolTip="上一页" AutomationProperties.Name="上一页"/>
+      <StackPanel x:Name="PageNumbers" Orientation="Horizontal"/>
+      <Button x:Name="NextPage" Content="›" Click="GoToNextPage" Width="28" Height="28" Padding="0" FontSize="18"
+       Margin="4,0,0,0" ToolTip="下一页" AutomationProperties.Name="下一页"/>
+     </StackPanel>
+    </Grid>
+   </Border>
+  </Grid>
+  <Border Grid.Row="1" Style="{StaticResource PanelBox}" Padding="12,7,12,9" Margin="0,10,0,0">
+   <StackPanel>
+    <DockPanel Margin="0,0,0,6">
+     <TextBlock x:Name="PianoRange" DockPanel.Dock="Right" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
+     <TextBlock x:Name="PianoSoundError" DockPanel.Dock="Right" Foreground="{StaticResource Error}" Margin="7,0,12,0"
+      VerticalAlignment="Center" MaxWidth="150" TextTrimming="CharacterEllipsis" Visibility="Collapsed"/>
+     <TextBlock x:Name="PianoTitle" DockPanel.Dock="Left" Text="钢琴键" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+     <ComboBox x:Name="PianoSizePicker" DockPanel.Dock="Left" Visibility="Collapsed" Width="95" HorizontalAlignment="Left" MinHeight="23" Margin="9,0,6,0"
+      SelectionChanged="SelectPianoSize" AutomationProperties.Name="钢琴键数"/>
+     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+      <TextBlock Text="空区" VerticalAlignment="Center" Foreground="{StaticResource Accent}" Margin="0,0,6,0"/>
+      <ComboBox x:Name="PianoAreaPicker" Width="128" MinHeight="24" SelectionChanged="SelectPianoArea"
+       AutomationProperties.Name="钢琴空区" ToolTip="可在这里选择空区，也可点击下方未换键的琴键。"/>
+      <CheckBox x:Name="PianoAreaEnabled" Content="钢琴弹奏" Margin="11,0,8,0" Checked="ChangePianoArea" Unchecked="ChangePianoArea"
+       ToolTip="用原声钢琴音色弹奏选中的空区。"/>
+      <ComboBox x:Name="PianoAreaOctave" Width="83" MinHeight="24" SelectionChanged="ChangePianoArea"
+       AutomationProperties.Name="当前空区八度"/>
+      <CheckBox x:Name="KickSoundToggle" Content="底鼓回声" Margin="17,0,0,0" Checked="PianoSoundChanged" Unchecked="PianoSoundChanged"
+       ToolTip="为钢琴击键叠加底鼓与两次逐渐变弱的回声。"/>
+      <TextBlock Text="延音" VerticalAlignment="Center" Foreground="{StaticResource White}" Margin="16,0,6,0"/>
+      <Slider x:Name="PianoSustain" Width="90" Minimum="0" Maximum="100" TickFrequency="1" SmallChange="1" LargeChange="10"
+       IsSnapToTickEnabled="True" IsMoveToPointEnabled="True" VerticalAlignment="Center" Style="{StaticResource PianoSustainSlider}"
+       ValueChanged="SustainChanged" Thumb.DragStarted="SustainDragStarted" Thumb.DragCompleted="SustainDragCompleted"
+       AutomationProperties.Name="钢琴延音" ToolTip="调节琴键松开后的尾音长短。使用踏板时，在松开踏板后开始衰减。"/>
+      <TextBlock x:Name="SustainValue" Width="34" Margin="6,0,0,0" VerticalAlignment="Center"
+       Foreground="{StaticResource Accent}" FontFamily="Consolas" FontSize="11"/>
+     </StackPanel>
+    </DockPanel>
+    <Canvas x:Name="PianoBody" Height="68" ClipToBounds="True" SizeChanged="ResizePiano"
+     Background="{StaticResource Background}" AutomationProperties.Name="实时钢琴键"/>
+   </StackPanel>
+  </Border>
+  <DockPanel Grid.Row="2" Margin="1,10,1,0">
+   <TextBlock x:Name="RuleCount" DockPanel.Dock="Right" Text="0 条换键" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
+   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="12,0,16,0">
+    <TextBlock x:Name="PianoModeStatus" VerticalAlignment="Center" Foreground="{StaticResource Accent}" Margin="0,0,9,0" Visibility="Collapsed"/>
+    <Button x:Name="PianoModeKeyButton" Content="设置钢琴切换键" Click="SelectPianoModeKey" Padding="9,3"
+     ToolTip="选一颗琴键，在全键盘钢琴和当前换键配置之间来回切换。"/>
+    <Button x:Name="ClearPianoModeKey" Content="×" Click="RemovePianoModeKey" Width="24" Padding="0"
+     Margin="5,0,0,0" Visibility="Collapsed" ToolTip="清除钢琴切换键" AutomationProperties.Name="清除钢琴切换键"/>
+   </StackPanel>
+   <TextBlock x:Name="OutputStatus" Text="设好换键后，切换到目标窗口，再按 MIDI 键。" Style="{StaticResource MutedText}"
+    TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+  </DockPanel>
+  </Grid>
+ </Grid>
+ <local:ParticleField x:Name="ParticleOverlay" Panel.ZIndex="100" xmlns:local="clr-namespace:MidiKey"/>
+ </Grid>
+</Window>
