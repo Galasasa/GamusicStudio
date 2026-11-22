@@ -392,6 +392,14 @@ public partial class MainWindow : Window
         keys.ReleaseOnFocusChange();
         long now = Environment.TickCount64;
         ShowPianoSoundError();
+        var preset = CurrentPreset;
+        var mouseBinding = preset.MouseSpeed;
+        var mouseMotion = preset.MouseMotion;
+        bool canAdjustMouseSpeed = output && (!editing || mouseSpeedEditor is { IsLearning: false }) &&
+            settings.ActivePresetId.HasValue && !PreviewingInactivePreset && flashCancellation is null;
+        bool canMoveMouse = output && !editing && CanSendMappedKeys && flashCancellation is null;
+        int? pendingMouseSpeed = null;
+        int mouseDistance = 0;
         SignalRow? latest = null;
         InputSource latestSource = viewedSource;
         int? lastPianoPitch = null;
@@ -411,6 +419,7 @@ public partial class MainWindow : Window
             }
             var row = source.Rows[signal.Id];
             int previous = row.Value;
+            bool seen = row.Seen;
             if (source == viewedSource && channel == signal.Id.Channel && KindPicker.SelectedIndex == (int)signal.Id.Kind)
             {
                 receivedInView = true;
@@ -444,9 +453,26 @@ public partial class MainWindow : Window
                 latest = row;
                 latestSource = source;
             }
+            if (source.Port is MidiPort mousePort)
+            {
+                mouseSpeedEditor?.Observe(mousePort, signal, preset.Piano?.ModeKey, mouseMotion);
+                mouseMotionEditor?.Observe(mousePort, signal, preset);
+            }
             if (packet.PianoAction != PianoInputAction.None)
             {
                 HandlePianoMode(packet.PianoAction, signal, source.Port?.Key);
+                continue;
+            }
+            if (mouseBinding?.Matches(source.Port?.Key, signal.Id) == true)
+            {
+                if (canAdjustMouseSpeed)
+                    pendingMouseSpeed = mouseBinding.SpeedFor(signal.Value);
+                continue;
+            }
+            if (mouseMotion?.Matches(source.Port?.Key, signal.Id) == true)
+            {
+                if (canMoveMouse)
+                    mouseDistance += mouseMotion.HorizontalDistance(signal.Value, seen ? previous : null, source == daw);
                 continue;
             }
             if (source == primary && signal.Id.Number == pianoSound.Regions.SwitchNote &&
@@ -465,6 +491,9 @@ public partial class MainWindow : Window
                 row.MappingRule?.ActionFor(signal, previous) is KeyMacro macro)
                 keys.Send(macro);
         }
+        if (pendingMouseSpeed is int speed) ApplyMouseSpeed(speed);
+        if (mouseDistance != 0 && !KeyOutput.MoveMouseHorizontally(mouseDistance))
+            OutputStatus.Text = "无法发送鼠标横移。";
         if (lastPianoPitch is int number) ShowPianoPitch(number);
         if (pianoChanged) PaintPianoNotes();
         bool activityCooled = hotRows.Count > 0 && hotRows.RemoveWhere(row => row.Cool(now)) > 0;

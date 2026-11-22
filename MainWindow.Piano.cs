@@ -179,6 +179,13 @@ public partial class MainWindow
     {
         if (action == PianoInputAction.Learn)
         {
+            if (CurrentPreset.MouseSpeed?.Matches(port, signal.Id) == true ||
+                CurrentPreset.MouseMotion?.Matches(port, signal.Id) == true)
+            {
+                StopLearningPianoModeKey();
+                OutputStatus.Text = "此控件已有鼠标绑定，请选择另一个切换键。";
+                return;
+            }
             SavePianoModeKey(signal.Id.Number, signal.Id.Kind, signal.Id.Channel, port);
             return;
         }

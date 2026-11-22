@@ -139,6 +139,8 @@ public partial class MainWindow
         PresetEditorName.Visibility = Visibility.Visible;
         FitWorkspaceWindow();
         ShowEditorName();
+        UpdateMouseSpeedControl();
+        UpdateMouseMotionControl();
         UpdateOutputControls();
         if (reload) Discover(true);
         OutputStatus.Text = PreviewingInactivePreset ? "此方案尚未生效。编辑期间暂停按键输出。" :
@@ -244,7 +246,8 @@ public partial class MainWindow
         if (RequestPresetName(heading, initialName) is not string name) return;
 
         var preset = new Preset(Guid.NewGuid(), name, copyCurrent ? current.Port : null,
-            copyCurrent ? current.Rules.ToArray() : Array.Empty<Rule>(), Piano: copyCurrent ? current.Piano : null);
+            copyCurrent ? current.Rules.ToArray() : Array.Empty<Rule>(), Piano: copyCurrent ? current.Piano : null,
+            MouseSpeed: copyCurrent ? current.MouseSpeed : null, MouseMotion: copyCurrent ? current.MouseMotion : null);
         if (!SaveLibrary(settings.Presets.Prepend(preset).ToArray(), settings.ActivePresetId)) return;
         PresetSearch.Clear();
         PresetScroll.ScrollToHorizontalOffset(0);

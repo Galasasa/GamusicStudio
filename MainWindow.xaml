@@ -68,7 +68,8 @@
    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
   </Grid.RowDefinitions>
   <Grid Margin="0,0,0,16">
-   <Grid HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,390,0">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <Grid VerticalAlignment="Center" Margin="0,0,12,0">
     <TextBlock x:Name="PresetEditorName" Visibility="Collapsed" VerticalAlignment="Center" FontSize="25" FontWeight="SemiBold"
      Foreground="{StaticResource Accent}" TextTrimming="CharacterEllipsis"/>
     <StackPanel x:Name="LibraryBrand">
@@ -79,8 +80,10 @@
     </StackPanel>
     </StackPanel>
    </Grid>
-   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+   <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
     <StackPanel x:Name="WorkspaceActions" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,12,0">
+     <Button x:Name="MouseSpeedButton" Content="鼠标灵敏度" Click="EditMouseSpeed" Padding="10,5" Margin="0,0,6,0"/>
+     <Button x:Name="MouseMotionButton" Content="鼠标横移" Click="EditMouseMotion" Padding="10,5" Margin="0,0,6,0"/>
      <Button Content="重命名" Click="RenamePreset" Padding="10,5" Margin="0,0,6,0"/>
      <Button Content="另存为" Click="SavePresetCopy" Padding="10,5" Margin="0,0,6,0"/>
      <Button Content="返回程序库" Click="ReturnToPresets" Padding="10,5"/>

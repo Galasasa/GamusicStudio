@@ -89,6 +89,7 @@ internal sealed record KeyMacro(MacroStep[] Steps, int Threshold, bool Falling, 
 internal sealed class KeyOutput : IDisposable
 {
     private const uint ExtendedKey = 0x0001, KeyUp = 0x0002, ScanCode = 0x0008, VkToExtendedScan = 4;
+    private const uint MouseMove = 0x0001;
     [StructLayout(LayoutKind.Sequential)]
     private struct Input
     {
@@ -121,6 +122,12 @@ internal sealed class KeyOutput : IDisposable
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern uint MapVirtualKeyEx(uint code, uint mode, IntPtr layout);
     [DllImport("user32.dll", SetLastError = true)] private static extern uint SendInput(uint count, Input[] input, int size);
+
+    internal static bool MoveMouseHorizontally(int distance)
+    {
+        var movement = new Input { Data = new InputData { Mouse = new Mouse { X = distance, Flags = MouseMove } } };
+        return SendInput(1, new[] { movement }, Marshal.SizeOf<Input>()) == 1;
+    }
 
     private readonly record struct Job(KeyMacro Macro, IntPtr Target, CancellationToken Cancellation);
     private sealed record HeldNote(KeyMacro Macro, int[] Keys);

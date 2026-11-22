@@ -3,7 +3,8 @@ using System.Text.Json;
 
 namespace MidiKey;
 
-internal sealed record Preset(Guid Id, string Name, string? Port, Rule[] Rules, string? Artwork = null, PianoSettings? Piano = null);
+internal sealed record Preset(Guid Id, string Name, string? Port, Rule[] Rules, string? Artwork = null,
+    PianoSettings? Piano = null, MouseSpeedBinding? MouseSpeed = null, MouseMotionBinding? MouseMotion = null);
 
 internal static class GamePresets
 {
@@ -71,7 +72,9 @@ internal sealed class SettingsStore
             {
                 Name = preset.Name.Trim(),
                 Rules = ValidRules(preset.Rules),
-                Piano = preset.Piano?.Normalize()
+                Piano = preset.Piano?.Normalize(),
+                MouseSpeed = preset.MouseSpeed is { IsValid: true } binding ? binding : null,
+                MouseMotion = preset.MouseMotion is { IsValid: true } motion ? motion : null
             })
             .ToArray();
         if (presets.Length == 0)
