@@ -24,7 +24,7 @@ The application requires the .NET Desktop Runtime. Piano playback reads the Wind
 
 ## License and assets
 
-The source code is made available under the MIT License. Game names and logos are trademarks of their respective owners. The splash image and game artwork may contain third-party material and are not granted under the MIT License. Confirm the rights to redistribute these assets.
+The source code is made available under the MIT License. The splash image was generated with AI. Game names and logos are trademarks of their respective owners. The splash image and game artwork may contain third-party material and are not granted under the MIT License. Confirm the rights to redistribute these assets.
 
 ---
 
@@ -54,4 +54,4 @@ dotnet publish MidiKey.csproj -c Release -r win-x64 --self-contained false -p:Pu
 
 ## 许可证与素材
 
-源码使用 MIT 许可证。游戏名称和标志属于各自的权利人。开屏图片与游戏美术素材可能包含第三方内容，不属于 MIT 许可证的授权范围。重新分发这些素材前请确认相关权利。
+源码使用 MIT 许可证。开屏图片由 AI 生成。游戏名称和标志属于各自的权利人。开屏图片与游戏美术素材可能包含第三方内容，不属于 MIT 许可证的授权范围。重新分发这些素材前请确认相关权利。
